@@ -39,11 +39,10 @@ inotifywait -mq -e modify --format '%w%f' "$STATE" | while read -r FILE; do
     case "$ID" in
         14)
             pactl set-sink-volume "$SINK" "${PERCENT}%" && \
-                echo "Pot 1: Volume = ${PERCENT}%"
+            echo "Pot 1: Volume = ${PERCENT}%"
             ;;
         20)
             echo "Pot 2 moved → ${PERCENT}%"
-            # you could control bass, EQ, another sink, etc.
             ;;
         *)
             echo "Unknown pot ID ${ID} = ${PERCENT}%"
