@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# read data from serial and trim whitespace
+# 
+# Elizabeth Lewis
+
+handleSIGINT() 
+{
+    printf "\nSIGINT Recieved! Exiting...\n"
+    exit 0
+}
+
+# Get the name of the device from the user or quit
+[ -z $1 ] && \
+    echo "Please provide /dev/tty device e.g. /dev/ttyACM0" && \
+    exit 0
+
+# Check for tty
+if [ -t 0 ]; then
+    printf "Arduino Serial Monitor\n\n"
+fi
+
+echo "" > $HOME/.local/state/$1 # State file initialization
+
+trap handleSIGINT SIGINT
+
+# Main Loop
+while read -r line; do
+    [ -z $line ] && continue # If the line is empty, continue without executing anything
+    echo $line | tr -d '[:space:]' > $HOME/.local/state/$1
+    echo $line
+done < /dev/$1
+

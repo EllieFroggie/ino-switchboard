@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# Use input from serial to do stuff
+#
+# Elizabeth Lewis
+
+# State tracker bits
+REPEAT1=0
+REPEAT2=0
+MUTE=0
+DEAF=0
+
+handleSIGINT() 
+{
+    printf "\nSIGINT Recieved! Exiting...\n"
+    exit 0
+}
+
+# Get the name of the device from the user or quit
+[ -z $1 ] && \
+    echo "Please provide /dev/tty device e.g. /dev/ttyACM0" && \
+    exit 0
+
+trap handleSIGINT SIGINT
+
+# Main loop
+while true; do 
+
+    ACM=$(cat $HOME/.local/state/TESTING )
+    SINK=$(pactl info | grep "Default Sink")
+
+    # Audio Device
+    if [ "$ACM" == '0x0' ]; then
+
+        if [ "$SINK" == 'Default Sink: alsa_output.pci-0000_00_1f.3.analog-stereo' ]; then
+            pactl set-default-sink alsa_output.usb-Focusrite_Scarlett_Solo_USB_Y76QPCX21354BF-00.HiFi__Line1__sink
+        fi
+
+    elif [ "$ACM" == '0x1' ]; then
+
+        if [ "$SINK" == 'Default Sink: alsa_output.usb-Focusrite_Scarlett_Solo_USB_Y76QPCX21354BF-00.HiFi__Line1__sink' ]; then
+            pactl set-default-sink alsa_output.pci-0000_00_1f.3.analog-stereo
+        fi
+    
+    # Discord
+    #
+    # Mute Switch UP
+    elif [ "$ACM" == "0x3" ]; then
+       
+        if [ "$REPEAT1" == "0" ]; then
+            echo "Mute ON"
+            hyprctl dispatch sendshortcut CTRL SHIFT, m, 'class:^(vesktop)$'
+            MUTE=1
+            REPEAT1=1
+            
+        fi
+
+    # Mute Switch DOWN
+    elif [ "$ACM" == "0x2" ]; then
+      
+        if [ "$REPEAT1" == "1" ]; then
+            echo "Mute OFF"
+            hyprctl dispatch sendshortcut CTRL SHIFT, m, 'class:^(vesktop)$'
+            MUTE=0
+            REPEAT1=0
+        fi
+    
+    # Deaf Switch UP
+    elif [ "$ACM" == "0x5" ]; then
+       
+        if [ "$REPEAT2" == "0" ]; then
+            echo "Deafen ON"
+            hyprctl dispatch sendshortcut CTRL SHIFT, d, 'class:^(vesktop)$'
+            REPEAT2=1
+        fi
+    # Deaf Switch DOWN
+    elif [ "$ACM" == "0x4" ]; then
+      
+        if [ "$REPEAT2" == "1" ]; then
+            echo "Deafen OFF"
+            hyprctl dispatch sendshortcut CTRL SHIFT, d, 'class:^(vesktop)$'
+            REPEAT2=0
+        fi
+    fi
+    
+    sleep 0.1
+done

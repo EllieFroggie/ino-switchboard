@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+#
+# Playerctl Now Playing Listener
+#
+# Elizabeth Swann
+
+handleSIGINT() 
+{
+    printf "\nSIGINT Recieved! Exiting...\n"
+    > $FILE
+    exit 0
+}
+
+FILE=$HOME/.local/state/np
+PREVIOUS=""
+
+if [[ ! -f $FILE ]]; then
+    > $FILE
+fi
+
+
+trap handleSIGINT SIGINT
+
+echo "Now Playing Service"
+
+# Main Loop
+#
+#
+while true; do
+
+    STATUS="$(playerctl status)"
+    READ=$(playerctl metadata --format "|{{trunc(artist, 20)}}|{{trunc(title, 20)}}|{{trunc(album, 20)}}~")
+
+    if [[ "$STATUS" == "Playing" ]]; then
+
+        # If the track has changed
+        if [[ "$READ" != "$PREVIOUS" ]]; then 
+            echo $READ > $FILE
+        fi
+    
+        PREVIOUS=$READ
+
+    elif [[ "$STATUS" == "Paused" ]]; then
+
+        echo $READ > $FILE
+    
+    # This next one is actually if playerctl doesn't find a player.
+    # It for some reason returns a blank string, and sends the "Player not found"
+    # or whatever string to stderr. Thanks playerctl.
+    elif [[ -z $STATUS ]]; then
+
+        if [[ -s $FILE ]]; then
+            > $FILE
+        else
+            continue
+        fi
+    
+    else
+        > $FILE
+    fi
+
+   sleep 0.5
+done #2> /dev/null

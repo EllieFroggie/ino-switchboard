@@ -1,2 +1,2 @@
 # ino-switchboard
-Arduino switchboard for shortcuts, volume and other stuff
+Some switches for my desk, programmed using Arduino and bash
